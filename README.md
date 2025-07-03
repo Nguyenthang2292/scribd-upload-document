@@ -28,7 +28,7 @@ pip install -r requirements.txt
 
 ### 1. Giao diện đồ họa (GUI)
 ```bash
-python gui_app.py
+python scribd-upload-document/gui_app.py
 ```
 
 **Tính năng GUI:**
@@ -43,42 +43,42 @@ python gui_app.py
 #### Xử lý file đơn lẻ
 ```bash
 # Cơ bản
-python change_hash_pdf.py input.pdf
+python scribd-upload-document/change_hash_pdf.py input.pdf
 
 # Với thư mục output tùy chỉnh
-python change_hash_pdf.py input.pdf --output-dir custom_output
+python scribd-upload-document/change_hash_pdf.py input.pdf --output-dir custom_output
 
 # Với metadata tùy chỉnh
-python change_hash_pdf.py input.pdf --metadata '{"CustomKey": "CustomValue"}'
+python scribd-upload-document/change_hash_pdf.py input.pdf --metadata '{"CustomKey": "CustomValue"}'
 
 # Với tên file output tùy chỉnh
-python change_hash_pdf.py input.pdf --output-filename my_output.pdf
+python scribd-upload-document/change_hash_pdf.py input.pdf --output-filename my_output.pdf
 
 # Chế độ verbose
-python change_hash_pdf.py input.pdf --verbose
+python scribd-upload-document/change_hash_pdf.py input.pdf --verbose
 ```
 
 #### Xử lý hàng loạt
 ```bash
 # Xử lý tất cả PDF trong thư mục
-python batch_processor.py /path/to/pdfs
+python scribd-upload-document/batch_processor.py /path/to/pdfs
 
 # Với thư mục output tùy chỉnh
-python batch_processor.py /path/to/pdfs --output-dir /path/to/output
+python scribd-upload-document/batch_processor.py /path/to/pdfs --output-dir /path/to/output
 
 # Với metadata tùy chỉnh
-python batch_processor.py /path/to/pdfs --metadata '{"CustomKey": "CustomValue"}'
+python scribd-upload-document/batch_processor.py /path/to/pdfs --metadata '{"CustomKey": "CustomValue"}'
 
 # Với số worker tùy chỉnh
-python batch_processor.py /path/to/pdfs --workers 8
+python scribd-upload-document/batch_processor.py /path/to/pdfs --workers 8
 
 # Chế độ verbose
-python batch_processor.py /path/to/pdfs --verbose
+python scribd-upload-document/batch_processor.py /path/to/pdfs --verbose
 ```
 
 ### 3. Sử dụng như module Python
 ```python
-from change_hash_pdf import PDFHashChanger
+from scribd-upload-document.change_hash_pdf import PDFHashChanger
 
 # Khởi tạo
 changer = PDFHashChanger("output_directory")
@@ -91,14 +91,17 @@ print(f"Output: {result}")
 ## Cấu trúc dự án
 
 ```
-Fengshui/
+scribd-upload-document/
 ├── change_hash_pdf.py      # Core PDF processing logic
 ├── batch_processor.py      # Batch processing functionality
-├── gui_app.py             # GUI application
-├── config.py              # Configuration settings
-├── requirements.txt       # Python dependencies
-├── README.md             # This file
-└── output/               # Default output directory
+├── gui_app.py              # GUI application
+├── config.py               # Configuration settings
+├── requirements.txt        # Python dependencies
+├── README.md               # This file
+├── scribd_bypass.py        # Scribd bypass logic
+├── epub_to_pdf.py          # EPUB to PDF conversion
+├── dejavu-sans ttf/        # Font files
+└── output/                 # Default output directory (tạo khi chạy)
 ```
 
 ## Cấu hình
@@ -125,7 +128,7 @@ Chỉnh sửa `config.py` để tùy chỉnh:
 
 ### Xử lý hàng loạt với báo cáo
 ```bash
-python batch_processor.py ./pdfs --workers 4 --verbose
+python scribd-upload-document/batch_processor.py ./pdfs --workers 4 --verbose
 ```
 
 Kết quả sẽ tạo file `processing_report.txt` với thông tin chi tiết.
@@ -179,7 +182,7 @@ Kết quả sẽ tạo file `processing_report.txt` với thông tin chi tiết.
 ```bash
 # Bật debug logging
 export LOG_LEVEL=DEBUG
-python change_hash_pdf.py input.pdf --verbose
+python scribd-upload-document/change_hash_pdf.py input.pdf --verbose
 ```
 
 ## Đóng góp

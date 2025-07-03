@@ -91,9 +91,12 @@ class PDFHashChangerGUI:
                                font=("Arial", 16, "bold"))
         title_label.grid(row=0, column=0, columnspan=3, pady=(0, 20), sticky="we")
         
+        # EPUB to PDF section (moved up)
+        self.setup_epub_section(main_frame)
+        
         # Processing mode
         mode_frame = ttk.LabelFrame(main_frame, text="Processing Mode", padding="10")
-        mode_frame.grid(row=1, column=0, columnspan=3, sticky="we", pady=(0, 10))
+        mode_frame.grid(row=2, column=0, columnspan=3, sticky="we", pady=(0, 10))
         
         ttk.Radiobutton(mode_frame, text="Single File", variable=self.processing_mode, 
                        value="single", command=self.on_mode_change).grid(row=0, column=0, padx=(0, 20))
@@ -113,9 +116,6 @@ class PDFHashChangerGUI:
         # Metadata section
         self.setup_metadata_section(main_frame)
         
-        # EPUB to PDF section
-        self.setup_epub_section(main_frame)
-        
         # Buttons
         self.setup_buttons(main_frame)
         
@@ -128,7 +128,7 @@ class PDFHashChangerGUI:
     def setup_input_section(self, parent):
         """Setup input file/directory selection"""
         input_frame = ttk.LabelFrame(parent, text="Input", padding="10")
-        input_frame.grid(row=2, column=0, columnspan=3, sticky="we", pady=(0, 10))
+        input_frame.grid(row=3, column=0, columnspan=3, sticky="we", pady=(0, 10))
         input_frame.columnconfigure(1, weight=1)
         
         # Single file input
@@ -152,7 +152,7 @@ class PDFHashChangerGUI:
     def setup_output_section(self, parent):
         """Setup output directory selection"""
         output_frame = ttk.LabelFrame(parent, text="Output", padding="10")
-        output_frame.grid(row=3, column=0, columnspan=3, sticky="we", pady=(0, 10))
+        output_frame.grid(row=4, column=0, columnspan=3, sticky="we", pady=(0, 10))
         output_frame.columnconfigure(1, weight=1)
         
         ttk.Label(output_frame, text="Output Directory:").grid(row=0, column=0, sticky="w")
@@ -162,7 +162,7 @@ class PDFHashChangerGUI:
     def setup_metadata_section(self, parent):
         """Setup metadata configuration"""
         metadata_frame = ttk.LabelFrame(parent, text="Custom Metadata (JSON)", padding="10")
-        metadata_frame.grid(row=4, column=0, columnspan=3, sticky="we", pady=(0, 10))
+        metadata_frame.grid(row=5, column=0, columnspan=3, sticky="we", pady=(0, 10))
         metadata_frame.columnconfigure(0, weight=1)
         
         self.metadata_text = scrolledtext.ScrolledText(metadata_frame, height=6, width=60)
@@ -181,7 +181,7 @@ class PDFHashChangerGUI:
     def setup_epub_section(self, parent):
         """Setup EPUB to PDF section"""
         epub_frame = ttk.LabelFrame(parent, text="EPUB to PDF", padding="10")
-        epub_frame.grid(row=5, column=0, columnspan=3, sticky="we", pady=(0, 10))
+        epub_frame.grid(row=6, column=0, columnspan=3, sticky="we", pady=(0, 10))
         epub_frame.columnconfigure(1, weight=1)
         
         ttk.Label(epub_frame, text="EPUB File:").grid(row=0, column=0, sticky="w")
@@ -198,7 +198,7 @@ class PDFHashChangerGUI:
     def setup_buttons(self, parent):
         """Setup action buttons"""
         button_frame = ttk.Frame(parent)
-        button_frame.grid(row=6, column=0, columnspan=3, pady=(0, 10))
+        button_frame.grid(row=7, column=0, columnspan=3, pady=(0, 10))
         
         self.process_button = ttk.Button(button_frame, text="Process PDF(s)", 
                                        command=self.process_files, style="Accent.TButton")
@@ -210,10 +210,10 @@ class PDFHashChangerGUI:
     def setup_progress_section(self, parent):
         """Setup progress bar and log"""
         progress_frame = ttk.LabelFrame(parent, text="Progress & Log", padding="10")
-        progress_frame.grid(row=7, column=0, columnspan=3, sticky="we", pady=(0, 10))
+        progress_frame.grid(row=8, column=0, columnspan=3, sticky="we", pady=(0, 10))
         progress_frame.columnconfigure(0, weight=1)
         progress_frame.rowconfigure(1, weight=1)
-        parent.rowconfigure(7, weight=1)
+        parent.rowconfigure(8, weight=1)
         
         # Progress bar
         self.progress_var = tk.DoubleVar()
