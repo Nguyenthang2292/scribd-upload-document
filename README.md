@@ -1,215 +1,231 @@
-# PDF Hash Changer
+# PDF Utility Toolkit
 
-Ứng dụng thay đổi hash PDF với giao diện đa dạng và tính năng nâng cao.
+A powerful toolkit for advanced PDF processing with a modern, user-friendly GUI and batch capabilities.
 
-## Tính năng chính
+## Main Features
 
-- ✅ **Xử lý file đơn lẻ**: Thay đổi metadata của một file PDF
-- ✅ **Xử lý hàng loạt**: Xử lý nhiều file PDF cùng lúc
-- ✅ **Giao diện đồ họa**: GUI thân thiện với người dùng
-- ✅ **Giao diện dòng lệnh**: CLI mạnh mẽ cho tự động hóa
-- ✅ **Xử lý song song**: Tăng tốc độ xử lý với multi-threading
-- ✅ **Báo cáo chi tiết**: Theo dõi tiến trình và kết quả xử lý
-- ✅ **Tùy chỉnh metadata**: Hỗ trợ metadata tùy chỉnh
-- ✅ **Xử lý lỗi**: Error handling toàn diện
+- ✅ **Bypass Scribd**: Create Scribd-compatible PDFs (single or batch)
+- ✅ **EPUB to PDF**: Convert EPUB files to PDF
+- ✅ **DOC to PDF**: Convert DOC/DOCX files to PDF
+- ✅ **XLS to PDF**: Convert XLS/XLSX files to PDF
+- ✅ **PPT to PDF**: Convert PPT/PPTX files to PDF
+- ✅ **PNG to PDF**: Convert PNG images to PDF
+- ✅ **JPG to PDF**: Convert JPG/JPEG images to PDF
+- ✅ **Merge 2 Vertical Pages**: Combine every two consecutive portrait pages into one landscape page (single or batch)
+- ✅ **Merge PDFs**: Merge multiple PDFs and other supported formats (DOC, XLS, PPT, PNG, JPG) into a single PDF
+- ✅ **Compress PDF**: Reduce PDF file size with 3 compression levels (Low, Medium, High)
+- ✅ **Batch Processing**: All main features support both single file and batch (directory) mode
+- ✅ **Detailed Logging**: Track progress and results
+- ✅ **Error Handling**: Robust error handling and reporting
 
-## Cài đặt
+## Changelog
 
-### Yêu cầu hệ thống
+### v2.3.0 (Current)
+- ✅ Remove Hash Changer feature
+- ✅ Add DOC, XLS, PPT, PNG, JPG to PDF conversion (GUI & CLI)
+- ✅ Refactor: all file-to-PDF conversion in convert_to_pdf.py
+
+### v2.2.0
+- ✅ Add PDF compression with 3 modes: low, medium, high (using PyMuPDF)
+- ✅ Add GUI for PDF compression
+- ✅ Refactor README for clarity and completeness
+
+### v2.1.0
+- ✅ Merge multiple file formats (PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, PNG, JPG) into a single PDF
+- ✅ Auto-convert images and Office files to PDF before merging
+- ✅ Clean up temporary files after merging
+- ⚠️ Requires: Pillow, docx2pdf (for Word), unoconv/LibreOffice (for Excel/PowerPoint)
+
+### v2.0.0
+- ✅ Refactor the entire codebase
+- ✅ Add GUI application
+- ✅ Add batch processing
+- ✅ Improve error handling
+- ✅ Add logging system
+- ✅ Add configuration system
+- ✅ Add CLI arguments
+- ✅ Add progress tracking
+- ✅ Add detailed reporting
+
+### v1.0.0 (Original)
+- ✅ Basic PDF hash changing
+- ✅ Random filename generation
+
+## Supported Formats
+
+- PDF
+- DOC, DOCX (Word)
+- XLS, XLSX (Excel)
+- PPT, PPTX (PowerPoint)
+- PNG, JPG, JPEG (Images)
+- EPUB (to PDF)
+
+## Installation
+
+### System Requirements
 - Python 3.7+
 - Windows/Linux/macOS
 
-### Cài đặt dependencies
+### Install dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-## Sử dụng
+**Note:**
+- To use the Merge 2 Vertical Pages feature, you must install Poppler:
+    - **Windows:**
+        1. Download Poppler: https://github.com/oschwartz10612/poppler-windows/releases/
+        2. Extract, e.g., to C:\poppler-xx\
+        3. Add the `bin` folder (e.g., `C:\poppler-xx\Library\bin` or `C:\poppler-xx\bin`) to your PATH environment variable.
+        4. Open a new Command Prompt and check: `pdftoppm -h` (should show help message).
+    - **Linux:**
+        ```bash
+        sudo apt install poppler-utils
+        ```
+    - **Mac:**
+        ```bash
+        brew install poppler
+        ```
 
-### 1. Giao diện đồ họa (GUI)
+- For merging and compressing PDFs, you may need:
+    - `pillow` (for image to PDF conversion)
+    - `docx2pdf` (for Word to PDF, requires Microsoft Word on Windows)
+    - `unoconv` or `libreoffice` (for Excel/PowerPoint to PDF)
+    - `pymupdf` (for PDF compression)
+
+### Install extra dependencies
 ```bash
-python scribd-upload-document/gui_app.py
+pip install pillow docx2pdf pymupdf
+# For Linux, also install unoconv/libreoffice:
+sudo apt install unoconv libreoffice
 ```
 
-**Tính năng GUI:**
-- Chọn file đơn lẻ hoặc thư mục để xử lý hàng loạt
-- Tùy chỉnh metadata JSON
-- Theo dõi tiến trình xử lý
-- Xem log chi tiết
-- Báo cáo kết quả
+## Usage
 
-### 2. Giao diện dòng lệnh (CLI)
-
-#### Xử lý file đơn lẻ
+### 1. Graphical User Interface (GUI)
 ```bash
-# Cơ bản
-python scribd-upload-document/change_hash_pdf.py input.pdf
-
-# Với thư mục output tùy chỉnh
-python scribd-upload-document/change_hash_pdf.py input.pdf --output-dir custom_output
-
-# Với metadata tùy chỉnh
-python scribd-upload-document/change_hash_pdf.py input.pdf --metadata '{"CustomKey": "CustomValue"}'
-
-# Với tên file output tùy chỉnh
-python scribd-upload-document/change_hash_pdf.py input.pdf --output-filename my_output.pdf
-
-# Chế độ verbose
-python scribd-upload-document/change_hash_pdf.py input.pdf --verbose
+python GUI_main_app.py
 ```
 
-#### Xử lý hàng loạt
+**GUI Features:**
+- Select the main function from the **dropdown menu** at the top (Bypass Scribd, EPUB to PDF, DOC to PDF, XLS to PDF, PPT to PDF, PNG to PDF, JPG to PDF, Merge 2 Vertical Pages, Merge PDFs, Compress PDF)
+- Each function supports both **Single File** and **Batch Processing** (directory)
+- Track progress and logs in real time
+- All function names and UI are in English
+- **Merge PDFs**: Drag & drop, reorder, multi-format support, auto output name
+- **Compress PDF**: Choose file, compression level, and output location
+
+### 2. Command Line Interface (CLI)
+
+#### DOC to PDF
 ```bash
-# Xử lý tất cả PDF trong thư mục
-python scribd-upload-document/batch_processor.py /path/to/pdfs
-
-# Với thư mục output tùy chỉnh
-python scribd-upload-document/batch_processor.py /path/to/pdfs --output-dir /path/to/output
-
-# Với metadata tùy chỉnh
-python scribd-upload-document/batch_processor.py /path/to/pdfs --metadata '{"CustomKey": "CustomValue"}'
-
-# Với số worker tùy chỉnh
-python scribd-upload-document/batch_processor.py /path/to/pdfs --workers 8
-
-# Chế độ verbose
-python scribd-upload-document/batch_processor.py /path/to/pdfs --verbose
+python components/convert_to_pdf.py --doc input.docx --pdf output.pdf
+```
+#### XLS to PDF
+```bash
+python components/convert_to_pdf.py --xls input.xlsx --pdf output.pdf
+```
+#### PPT to PDF
+```bash
+python components/convert_to_pdf.py --ppt input.pptx --pdf output.pdf
+```
+#### PNG to PDF
+```bash
+python components/convert_to_pdf.py --png input.png --pdf output.pdf
+```
+#### JPG to PDF
+```bash
+python components/convert_to_pdf.py --jpg input.jpg --pdf output.pdf
+```
+#### EPUB to PDF
+```bash
+python components/convert_to_pdf.py --epub input.epub --pdf output.pdf
+```
+#### Merge PDFs (multi-format)
+```bash
+python components/merge_pdf.py file1.pdf file2.docx file3.jpg output.pdf
+```
+#### Compress PDF
+```bash
+python components/zip_pdf.py input.pdf output.pdf --mode medium
 ```
 
-### 3. Sử dụng như module Python
-```python
-from scribd-upload-document.change_hash_pdf import PDFHashChanger
-
-# Khởi tạo
-changer = PDFHashChanger("output_directory")
-
-# Xử lý file
-result = changer.process_pdf("input.pdf", {"CustomKey": "CustomValue"})
-print(f"Output: {result}")
-```
-
-## Cấu trúc dự án
+## Project Structure
 
 ```
 scribd-upload-document/
-├── change_hash_pdf.py      # Core PDF processing logic
-├── batch_processor.py      # Batch processing functionality
-├── gui_app.py              # GUI application
-├── config.py               # Configuration settings
-├── requirements.txt        # Python dependencies
-├── README.md               # This file
-├── scribd_bypass.py        # Scribd bypass logic
-├── epub_to_pdf.py          # EPUB to PDF conversion
-├── dejavu-sans ttf/        # Font files
-└── output/                 # Default output directory (tạo khi chạy)
+├── components/
+│   ├── convert_to_pdf.py         # All file-to-PDF conversion logic
+│   ├── batch_processor.py        # Batch processing functionality
+│   ├── scribd_bypass.py          # Scribd bypass logic
+│   ├── merge_pages_landscape.py  # Merge 2 vertical pages logic
+│   ├── merge_pdf.py              # Merge PDFs and multi-format logic
+│   ├── zip_pdf.py                # PDF compression logic
+│   └── config.py                 # Configuration settings
+├── GUI_main_app.py               # GUI application
+├── requirements.txt              # Python dependencies
+├── README.md                     # This file
+├── dejavu-sans ttf/              # Font files
+└── output/                       # Default output directory (created at runtime)
 ```
 
-## Cấu hình
+## Configuration
 
-Chỉnh sửa `config.py` để tùy chỉnh:
+Edit `config.py` to customize:
+- **Default output directory**
+- **Number of workers for parallel processing**
+- **Logging setup**
+- **GUI setup**
 
-- **Thư mục output mặc định**
-- **Metadata mặc định**
-- **Số worker cho xử lý song song**
-- **Cài đặt logging**
-- **Cài đặt GUI**
+## Advanced Features
 
-## Ví dụ sử dụng
-
-### Metadata tùy chỉnh
-```json
-{
-  "/CustomHashBypass": "1",
-  "/ProcessingDate": "2024-01-01",
-  "/UserID": "user123",
-  "/Version": "2.0"
-}
-```
-
-### Xử lý hàng loạt với báo cáo
-```bash
-python scribd-upload-document/batch_processor.py ./pdfs --workers 4 --verbose
-```
-
-Kết quả sẽ tạo file `processing_report.txt` với thông tin chi tiết.
-
-## Tính năng nâng cao
-
-### 1. Xử lý song song
-- Tự động phát hiện số CPU cores
-- Có thể tùy chỉnh số worker
-- Tối ưu hiệu suất cho file lớn
+### 1. Parallel Processing
+- Automatic detection of CPU cores
+- Customizable number of workers
+- Optimized performance for large files
 
 ### 2. Error Handling
-- Xử lý file bị lỗi
-- Log chi tiết các lỗi
-- Tiếp tục xử lý khi gặp lỗi
+- Handle corrupted files
+- Log detailed error messages
+- Continue processing on error
 
-### 3. Báo cáo chi tiết
-- Thời gian xử lý từng file
-- Tổng thời gian xử lý
-- Tỷ lệ thành công/thất bại
-- Đường dẫn file output
-
-### 4. Tùy chỉnh metadata
-- Hỗ trợ JSON metadata
-- Validation JSON
-- Metadata mặc định
+### 3. Detailed Reporting
+- Processing time for each file
+- Total processing time
+- Success/Failure ratio
+- Output file path
 
 ## Troubleshooting
 
-### Lỗi thường gặp
+### Common Issues
 
-1. **File không tồn tại**
+1. **File Not Found**
    ```
    Error: File not found: input.pdf
    ```
-   **Giải pháp**: Kiểm tra đường dẫn file
+   **Solution**: Verify the file path
 
-2. **Lỗi JSON metadata**
-   ```
-   Error: Invalid JSON metadata
-   ```
-   **Giải pháp**: Sử dụng JSON validator
-
-3. **Lỗi quyền truy cập**
+2. **Permission Denied**
    ```
    Error: Permission denied
    ```
-   **Giải pháp**: Chạy với quyền admin hoặc thay đổi thư mục output
+   **Solution**: Run with admin privileges or change output directory
 
-### Debug mode
+### Debug Mode
 ```bash
-# Bật debug logging
+# Enable debug logging
 export LOG_LEVEL=DEBUG
-python scribd-upload-document/change_hash_pdf.py input.pdf --verbose
+python components/convert_to_pdf.py --doc input.docx --pdf output.pdf --verbose
 ```
 
-## Đóng góp
+## Contribution
 
-1. Fork dự án
-2. Tạo feature branch
+1. Fork the project
+2. Create a feature branch
 3. Commit changes
 4. Push to branch
-5. Tạo Pull Request
+5. Create Pull Request
 
 ## License
 
-MIT License - xem file LICENSE để biết thêm chi tiết.
-
-## Changelog
-
-### v2.0.0 (Current)
-- ✅ Refactor hoàn toàn codebase
-- ✅ Thêm GUI application
-- ✅ Thêm batch processing
-- ✅ Cải thiện error handling
-- ✅ Thêm logging system
-- ✅ Thêm configuration system
-- ✅ Thêm CLI arguments
-- ✅ Thêm progress tracking
-- ✅ Thêm detailed reporting
-
-### v1.0.0 (Original)
-- ✅ Basic PDF hash changing
-- ✅ Random filename generation 
+MIT License - see LICENSE for more details.
