@@ -9,7 +9,6 @@ from tkinter import ttk, filedialog, messagebox, scrolledtext
 import json
 import os
 from pathlib import Path
-from typing import Optional, Dict, Any
 from pdf2image import convert_from_path
 from PIL import Image, ImageTk
 
@@ -58,7 +57,9 @@ class PDFUtilityToolkitGUI:
         menu_frame = ttk.Frame(self.root)
         menu_frame.pack(fill="x", padx=10, pady=10)
         ttk.Label(menu_frame, text="Select Function:").pack(side="left")
-        function_menu = ttk.Combobox(menu_frame, textvariable=self.selected_function, values=self.function_options, state="readonly", width=25)
+        style = ttk.Style()
+        style.configure('Custom.TCombobox', fieldbackground='#e0e0e0', background='#e0e0e0', foreground='black', borderwidth=2, relief='raised')
+        function_menu = ttk.Combobox(menu_frame, textvariable=self.selected_function, values=self.function_options, state="readonly", width=25, style='Custom.TCombobox')
         function_menu.pack(side="left", padx=10)
         function_menu.bind("<<ComboboxSelected>>", self.on_function_change)
         # Main content area
@@ -636,8 +637,13 @@ def main():
         
         # Set the theme
         style = ttk.Style(root)
-        style.theme_use("azure-dark")  # Use azure-dark theme directly
-        root.tk.call("set_theme", "dark")
+        style.theme_use("azure-light")  # Use azure-light theme directly
+        root.tk.call("set_theme", "light")
+        # Custom button style: grey background, white text
+        style.configure('Accent.TButton', background='#888888', foreground='white', font=('Segoe UI', 10, 'bold'))
+        style.map('Accent.TButton', background=[('active', '#666666')])
+        style.configure('TButton', background='#888888', foreground='white', font=('Segoe UI', 10))
+        style.map('TButton', background=[('active', '#666666')])
         
     except Exception as e:
         print(f"Warning: Could not load Azure theme: {e}")

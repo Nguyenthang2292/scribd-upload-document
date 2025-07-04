@@ -1,8 +1,6 @@
 import sys
 from PyPDF2 import PdfReader, PdfWriter
 from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import landscape, portrait
-from reportlab.lib.utils import ImageReader
 from io import BytesIO
 
 
