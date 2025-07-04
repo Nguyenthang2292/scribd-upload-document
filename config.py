@@ -3,7 +3,6 @@ Configuration settings for PDF Hash Changer application
 """
 
 import os
-from pathlib import Path
 
 # Default settings
 DEFAULT_OUTPUT_DIR = "output"

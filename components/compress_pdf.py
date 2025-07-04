@@ -1,5 +1,4 @@
 import fitz  # PyMuPDF
-import os
 
 
 def compress_pdf(input_pdf, output_pdf, mode='medium'):

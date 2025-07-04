@@ -1,255 +1,404 @@
-#!/usr/bin/env python3
 """
-Batch PDF Processor - Process multiple PDF files with hash changing
+Enhanced Batch Processor Component
+
+This module provides functionality for batch processing PDF files with progress tracking
+and support for multiple operations.
 """
 
-import sys
+import os
 import time
-import concurrent.futures
+from typing import List, Dict, Any, Callable, Optional
 from pathlib import Path
-from typing import List, Dict, Any, Optional
-import logging
-
-from .change_hash_pdf import PDFHashChanger
-import config
-
-logger = logging.getLogger(__name__)
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import threading
 
 
-class BatchPDFProcessor:
-    """Process multiple PDF files in batch"""
+class ProgressTracker:
+    """Progress tracker for batch operations."""
     
-    def __init__(self, input_dir: str, output_dir: Optional[str] = None):
-        """
-        Initialize batch processor
+    def __init__(self, total_files: int):
+        self.total_files = total_files
+        self.processed_files = 0
+        self.failed_files = 0
+        self.current_file = ""
+        self.start_time = time.time()
+        self.lock = threading.Lock()
+    
+    def update_progress(self, file_path: str, success: bool = True):
+        """Update progress for a processed file.
         
         Args:
-            input_dir: Directory containing input PDF files
-            output_dir: Output directory (default: input_dir/output)
+            file_path: Path of the processed file
+            success: Whether the operation was successful
         """
-        self.input_dir = Path(input_dir)
-        if not self.input_dir.exists():
-            raise ValueError(f"Input directory does not exist: {input_dir}")
-        
-        self.output_dir = Path(output_dir) if output_dir else self.input_dir / "output"
-        self.output_dir.mkdir(exist_ok=True)
-        
-        self.changer = PDFHashChanger(str(self.output_dir))
-        
-    def find_pdf_files(self) -> List[Path]:
-        """
-        Find all PDF files in input directory
+        with self.lock:
+            self.processed_files += 1
+            if not success:
+                self.failed_files += 1
+            self.current_file = os.path.basename(file_path)
+    
+    def get_progress(self) -> Dict[str, Any]:
+        """Get current progress information.
         
         Returns:
-            List of PDF file paths
+            Dictionary containing progress information
         """
-        pdf_files = []
-        for ext in config.SUPPORTED_EXTENSIONS:
-            pdf_files.extend(self.input_dir.glob(f"*{ext}"))
-            pdf_files.extend(self.input_dir.glob(f"*{ext.upper()}"))
-        
-        return sorted(pdf_files)
+        with self.lock:
+            elapsed_time = time.time() - self.start_time
+            progress_percent = (self.processed_files / self.total_files * 100) if self.total_files > 0 else 0
+            
+            # Estimate remaining time
+            if self.processed_files > 0:
+                avg_time_per_file = elapsed_time / self.processed_files
+                remaining_files = self.total_files - self.processed_files
+                estimated_remaining = avg_time_per_file * remaining_files
+            else:
+                estimated_remaining = 0
+            
+            return {
+                'processed': self.processed_files,
+                'total': self.total_files,
+                'failed': self.failed_files,
+                'success': self.processed_files - self.failed_files,
+                'progress_percent': progress_percent,
+                'current_file': self.current_file,
+                'elapsed_time': elapsed_time,
+                'estimated_remaining': estimated_remaining,
+                'is_complete': self.processed_files >= self.total_files
+            }
+
+
+class BatchProcessor:
+    """Enhanced batch processor for PDF operations."""
     
-    def process_single_file(self, pdf_path: Path, metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """
-        Process a single PDF file
+    def __init__(self, max_workers: int = 4):
+        self.max_workers = max_workers
+        self.supported_operations = {
+            'compress': self._compress_operation,
+            'watermark': self._watermark_operation,
+            'encrypt': self._encrypt_operation,
+            'split': self._split_operation,
+            'clean_metadata': self._clean_metadata_operation,
+            'convert': self._convert_operation
+        }
+    
+    def process_directory(
+        self,
+        input_dir: str,
+        output_dir: str,
+        operation: str,
+        operation_params: Dict[str, Any],
+        file_pattern: str = "*.pdf",
+        recursive: bool = True,
+        progress_callback: Optional[Callable] = None
+    ) -> Dict[str, Any]:
+        """Process all files in a directory with the specified operation.
         
         Args:
-            pdf_path: Path to PDF file
-            metadata: Optional custom metadata
+            input_dir: Input directory path
+            output_dir: Output directory path
+            operation: Operation to perform
+            operation_params: Parameters for the operation
+            file_pattern: File pattern to match
+            recursive: Whether to search recursively
+            progress_callback: Callback function for progress updates
             
         Returns:
-            Dictionary with processing results
+            Dictionary containing processing results
         """
-        start_time = time.time()
-        result = {
-            "input_file": str(pdf_path),
-            "success": False,
-            "output_file": None,
-            "error": None,
-            "processing_time": 0
+        # Find all matching files
+        files = self._find_files(input_dir, file_pattern, recursive)
+        
+        if not files:
+            return {
+                'success': False,
+                'error': 'No files found matching the pattern',
+                'processed_files': 0,
+                'failed_files': 0
+            }
+        
+        # Create output directory
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Initialize progress tracker
+        progress_tracker = ProgressTracker(len(files))
+        
+        # Process files
+        results = {
+            'processed_files': [],
+            'failed_files': [],
+            'total_files': len(files),
+            'success_count': 0,
+            'failure_count': 0
         }
         
-        try:
-            output_file = self.changer.process_pdf(str(pdf_path), metadata)
-            if output_file:
-                result["success"] = True
-                result["output_file"] = output_file
-            else:
-                result["error"] = "Processing failed"
-                
-        except Exception as e:
-            result["error"] = str(e)
-            
-        result["processing_time"] = time.time() - start_time
-        return result
-    
-    def process_batch(self, metadata: Optional[Dict[str, Any]] = None, 
-                     max_workers: int = None) -> List[Dict[str, Any]]:
-        """
-        Process all PDF files in batch
-        
-        Args:
-            metadata: Optional custom metadata for all files
-            max_workers: Maximum number of concurrent workers
-            
-        Returns:
-            List of processing results
-        """
-        pdf_files = self.find_pdf_files()
-        
-        if not pdf_files:
-            logger.warning(f"No PDF files found in {self.input_dir}")
-            return []
-        
-        logger.info(f"Found {len(pdf_files)} PDF files to process")
-        
-        max_workers = max_workers or config.MAX_CONCURRENT_PROCESSES
-        
-        results = []
-        
-        # Process files in parallel
-        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # Use ThreadPoolExecutor for parallel processing
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             # Submit all tasks
             future_to_file = {
-                executor.submit(self.process_single_file, pdf_path, metadata): pdf_path
-                for pdf_path in pdf_files
+                executor.submit(
+                    self._process_single_file,
+                    file_path,
+                    output_dir,
+                    operation,
+                    operation_params
+                ): file_path for file_path in files
             }
             
-            # Collect results
-            for future in concurrent.futures.as_completed(future_to_file):
-                pdf_path = future_to_file[future]
+            # Process completed tasks
+            for future in as_completed(future_to_file):
+                file_path = future_to_file[future]
                 try:
                     result = future.result()
-                    results.append(result)
-                    
-                    if result["success"]:
-                        logger.info(f"✅ Processed: {pdf_path.name} -> {Path(result['output_file']).name}")
+                    if result['success']:
+                        results['processed_files'].append(result)
+                        results['success_count'] += 1
+                        progress_tracker.update_progress(file_path, True)
                     else:
-                        logger.error(f"❌ Failed: {pdf_path.name} - {result['error']}")
+                        results['failed_files'].append(result)
+                        results['failure_count'] += 1
+                        progress_tracker.update_progress(file_path, False)
+                    
+                    # Call progress callback if provided
+                    if progress_callback:
+                        progress_callback(progress_tracker.get_progress())
                         
                 except Exception as e:
-                    logger.error(f"❌ Exception processing {pdf_path.name}: {str(e)}")
-                    results.append({
-                        "input_file": str(pdf_path),
-                        "success": False,
-                        "output_file": None,
-                        "error": str(e),
-                        "processing_time": 0
-                    })
+                    error_result = {
+                        'file_path': file_path,
+                        'success': False,
+                        'error': str(e)
+                    }
+                    results['failed_files'].append(error_result)
+                    results['failure_count'] += 1
+                    progress_tracker.update_progress(file_path, False)
+                    
+                    if progress_callback:
+                        progress_callback(progress_tracker.get_progress())
         
+        results['success'] = results['failure_count'] == 0
         return results
     
-    def generate_report(self, results: List[Dict[str, Any]]) -> str:
-        """
-        Generate processing report
-
+    def _find_files(
+        self,
+        directory: str,
+        pattern: str,
+        recursive: bool
+    ) -> List[str]:
+        """Find files matching the pattern in the directory.
+        
         Args:
-            results: List of processing results
-
+            directory: Directory to search
+            pattern: File pattern to match
+            recursive: Whether to search recursively
+            
         Returns:
-            Formatted report string
+            List of matching file paths
         """
-        if not results:
-            return "No files processed"
-
-        total_files = len(results)
-        successful = sum(1 for r in results if r["success"])
-        failed = total_files - successful
-        total_time = sum(r["processing_time"] for r in results)
-
-        report = f"""
-=== BATCH PROCESSING REPORT ===
-Total files: {total_files}
-Successful: {successful}
-Failed: {failed}
-Total processing time: {total_time:.2f} seconds
-Average time per file: {total_time/total_files:.2f} seconds
-
-Output directory: {self.output_dir}
-
-DETAILED RESULTS:
-"""
-
-        for i, result in enumerate(results, 1):
-            status = "✅" if result["success"] else "❌"
-            report += f"{i:2d}. {status} {Path(result['input_file']).name}"
-
-            if result["success"]:
-                report += f" -> {Path(result['output_file']).name}"
-            else:
-                report += f" (Error: {result['error']})"
-
-            report += f" ({result['processing_time']:.2f}s)\n"
-
-        return report
-
-
-def main():
-    """Main function for batch processing"""
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description="Batch PDF Hash Changer - Process multiple PDF files",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  python batch_processor.py /path/to/pdfs
-  python batch_processor.py /path/to/pdfs --output-dir /path/to/output
-  python batch_processor.py /path/to/pdfs --metadata '{"CustomKey": "CustomValue"}'
-  python batch_processor.py /path/to/pdfs --workers 8
+        files = []
+        
+        if recursive:
+            for root, dirs, filenames in os.walk(directory):
+                for filename in filenames:
+                    if filename.lower().endswith('.pdf'):
+                        files.append(os.path.join(root, filename))
+        else:
+            try:
+                for filename in os.listdir(directory):
+                    if filename.lower().endswith('.pdf'):
+                        file_path = os.path.join(directory, filename)
+                        if os.path.isfile(file_path):
+                            files.append(file_path)
+            except (OSError, IOError):
+                pass
+        
+        return sorted(files)
+    
+    def _process_single_file(
+        self,
+        input_file: str,
+        output_dir: str,
+        operation: str,
+        operation_params: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Process a single file with the specified operation.
+        
+        Args:
+            input_file: Input file path
+            output_dir: Output directory path
+            operation: Operation to perform
+            operation_params: Parameters for the operation
+            
+        Returns:
+            Dictionary containing processing result
         """
-    )
-
-    parser.add_argument("input_dir", help="Directory containing PDF files")
-    parser.add_argument("--output-dir", "-o", help="Output directory")
-    parser.add_argument("--metadata", "-m", type=str,
-                       help="Custom metadata as JSON string")
-    parser.add_argument("--workers", "-w", type=int,
-                       default=config.MAX_CONCURRENT_PROCESSES,
-                       help=f"Number of concurrent workers (default: {config.MAX_CONCURRENT_PROCESSES})")
-    parser.add_argument("--verbose", "-v", action="store_true",
-                       help="Enable verbose logging")
-
-    args = parser.parse_args()
-
-    # Set logging level
-    if args.verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
-
-    # Parse metadata if provided
-    custom_metadata = None
-    if args.metadata:
         try:
-            import json
-            custom_metadata = json.loads(args.metadata)
-        except json.JSONDecodeError as e:
-            logger.error(f"Invalid JSON metadata: {e}")
-            sys.exit(1)
+            # Generate output file path
+            base_name = Path(input_file).stem
+            output_file = os.path.join(output_dir, f"{base_name}_processed.pdf")
+            
+            # Perform operation
+            if operation in self.supported_operations:
+                success = self.supported_operations[operation](
+                    input_file, output_file, operation_params
+                )
+            else:
+                return {
+                    'file_path': input_file,
+                    'success': False,
+                    'error': f'Unsupported operation: {operation}'
+                }
+            
+            if success:
+                return {
+                    'file_path': input_file,
+                    'output_path': output_file,
+                    'success': True
+                }
+            else:
+                return {
+                    'file_path': input_file,
+                    'success': False,
+                    'error': 'Operation failed'
+                }
+                
+        except Exception as e:
+            return {
+                'file_path': input_file,
+                'success': False,
+                'error': str(e)
+            }
+    
+    def _compress_operation(
+        self,
+        input_file: str,
+        output_file: str,
+        params: Dict[str, Any]
+    ) -> bool:
+        """Compress PDF operation."""
+        try:
+            from components.compress_pdf import compress_pdf
+            mode = params.get('mode', 'medium')
+            return compress_pdf(input_file, output_file, mode)
+        except Exception as e:
+            print(f"Compression error: {e}")
+            return False
+    
+    def _watermark_operation(
+        self,
+        input_file: str,
+        output_file: str,
+        params: Dict[str, Any]
+    ) -> bool:
+        """Add watermark operation."""
+        try:
+            from components.watermark_pdf import add_watermark_to_pdf
+            watermark_text = params.get('text', 'WATERMARK')
+            pages = params.get('pages', None)
+            return add_watermark_to_pdf(input_file, output_file, watermark_text, pages)
+        except Exception as e:
+            print(f"Watermark error: {e}")
+            return False
+    
+    def _encrypt_operation(
+        self,
+        input_file: str,
+        output_file: str,
+        params: Dict[str, Any]
+    ) -> bool:
+        """Encrypt PDF operation."""
+        try:
+            from components.pdf_encryption import encrypt_pdf_file
+            password = params.get('password', '')
+            encryption_level = params.get('encryption_level', 'MEDIUM')
+            return encrypt_pdf_file(input_file, output_file, password, encryption_level)
+        except Exception as e:
+            print(f"Encryption error: {e}")
+            return False
+    
+    def _split_operation(
+        self,
+        input_file: str,
+        output_file: str,
+        params: Dict[str, Any]
+    ) -> bool:
+        """Split PDF operation."""
+        try:
+            from components.pdf_splitter import split_pdf_by_pages_per_file
+            pages_per_file = params.get('pages_per_file', 1)
+            output_dir = os.path.dirname(output_file)
+            result = split_pdf_by_pages_per_file(input_file, output_dir, pages_per_file)
+            return len(result) > 0
+        except Exception as e:
+            print(f"Split error: {e}")
+            return False
+    
+    def _clean_metadata_operation(
+        self,
+        input_file: str,
+        output_file: str,
+        params: Dict[str, Any]
+    ) -> bool:
+        """Clean metadata operation."""
+        try:
+            from components.metadata_cleaner import remove_all_pdf_metadata
+            return remove_all_pdf_metadata(input_file, output_file)
+        except Exception as e:
+            print(f"Metadata cleaning error: {e}")
+            return False
+    
+    def _convert_operation(
+        self,
+        input_file: str,
+        output_file: str,
+        params: Dict[str, Any]
+    ) -> bool:
+        """Convert to PDF operation."""
+        try:
+            from components.convert_to_pdf import (
+                doc_to_pdf, xls_to_pdf, ppt_to_pdf, png_to_pdf, jpg_to_pdf, epub_to_pdf
+            )
+            
+            file_type = params.get('file_type', 'DOC/DOCX')
+            conversion_functions = {
+                'DOC/DOCX': doc_to_pdf,
+                'XLS/XLSX': xls_to_pdf,
+                'PPT/PPTX': ppt_to_pdf,
+                'PNG': png_to_pdf,
+                'JPG/JPEG': jpg_to_pdf,
+                'EPUB': epub_to_pdf
+            }
+            
+            if file_type in conversion_functions:
+                return conversion_functions[file_type](input_file, output_file)
+            else:
+                return False
+        except Exception as e:
+            print(f"Conversion error: {e}")
+            return False
 
-    try:
-        # Initialize processor
-        processor = BatchPDFProcessor(args.input_dir, args.output_dir)
 
-        # Process files
-        print(f"Starting batch processing of PDF files in: {args.input_dir}")
-        results = processor.process_batch(custom_metadata, args.workers)
-
-        # Generate and display report
-        report = processor.generate_report(results)
-        print(report)
-
-        # Save report to file
-        report_file = processor.output_dir / "processing_report.txt"
-        with open(report_file, "w", encoding="utf-8") as f:
-            f.write(report)
-
-        print(f"\nReport saved to: {report_file}")
-
-    except Exception as e:
-        logger.error(f"Batch processing failed: {str(e)}")
-        sys.exit(1)
-
-
-if __name__ == "__main__":
-    main() 
+def process_pdf_directory(
+    input_dir: str,
+    output_dir: str,
+    operation: str,
+    operation_params: Dict[str, Any],
+    progress_callback: Optional[Callable] = None
+) -> Dict[str, Any]:
+    """Convenience function to process PDF directory.
+    
+    Args:
+        input_dir: Input directory path
+        output_dir: Output directory path
+        operation: Operation to perform
+        operation_params: Parameters for the operation
+        progress_callback: Callback function for progress updates
+        
+    Returns:
+        Dictionary containing processing results
+    """
+    processor = BatchProcessor()
+    return processor.process_directory(
+        input_dir, output_dir, operation, operation_params,
+        progress_callback=progress_callback
+    ) 
