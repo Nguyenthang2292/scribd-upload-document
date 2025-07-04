@@ -20,7 +20,10 @@ A powerful toolkit for advanced PDF processing with a modern, user-friendly GUI 
 
 ## Changelog
 
-### v2.3.0 (Current)
+### v2.3.1 (Current)
+- ✅ Add PyQt5 GUI to enhance UI/UX
+
+### v2.3.0
 - ✅ Remove Hash Changer feature
 - ✅ Add DOC, XLS, PPT, PNG, JPG to PDF conversion (GUI & CLI)
 - ✅ Refactor: all file-to-PDF conversion in convert_to_pdf.py
