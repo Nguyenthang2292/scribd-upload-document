@@ -1,4 +1,8 @@
 pypdf>=3.17.0
+PyPDF2>=3.0.0
+PyQt5>=5.15.0
+fitz>=0.0.1  # alias for pymupdf, but recommend pymupdf
+pymupdf>=1.23.0
 pathlib2>=2.3.7; python_version < "3.4"
 ebooklib>=0.18
 beautifulsoup4>=4.12.2
@@ -6,5 +10,4 @@ fpdf>=1.7.2
 reportlab>=4.0.0
 pdf2image>=1.16.3
 pillow>=9.0.0
-docx2pdf>=0.1.8
-pymupdf>=1.23.0 
+docx2pdf>=0.1.8 

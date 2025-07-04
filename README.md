@@ -92,10 +92,13 @@ pip install -r requirements.txt
     - `docx2pdf` (for Word to PDF, requires Microsoft Word on Windows)
     - `unoconv` or `libreoffice` (for Excel/PowerPoint to PDF)
     - `pymupdf` (for PDF compression)
+    - `PyPDF2` (for PDF merging)
+    - `PyQt5` (for GUI with PyQt)
+    - `fitz` (alias for pymupdf, but use pymupdf)
 
 ### Install extra dependencies
 ```bash
-pip install pillow docx2pdf pymupdf
+pip install pillow docx2pdf pymupdf PyPDF2 PyQt5
 # For Linux, also install unoconv/libreoffice:
 sudo apt install unoconv libreoffice
 ```
@@ -103,8 +106,13 @@ sudo apt install unoconv libreoffice
 ## Usage
 
 ### 1. Graphical User Interface (GUI)
+#### Tkinter GUI
 ```bash
 python GUI_main_app.py
+```
+#### PyQt5 GUI (modern, drag & drop, preview, reorder)
+```bash
+python GUI_main_app_pyqt.py
 ```
 
 **GUI Features:**
@@ -112,7 +120,7 @@ python GUI_main_app.py
 - Each function supports both **Single File** and **Batch Processing** (directory)
 - Track progress and logs in real time
 - All function names and UI are in English
-- **Merge PDFs**: Drag & drop, reorder, multi-format support, auto output name
+- **Merge PDFs**: Drag & drop, reorder, multi-format support, auto output name, preview thumbnails (PyQt5 GUI)
 - **Compress PDF**: Choose file, compression level, and output location
 
 ### 2. Command Line Interface (CLI)
