@@ -79,7 +79,8 @@ class BatchProcessor:
             'encrypt': self._encrypt_operation,
             'split': self._split_operation,
             'clean_metadata': self._clean_metadata_operation,
-            'convert': self._convert_operation
+            'convert': self._convert_operation,
+            'bypass_scribd': self._bypass_scribd_operation,  # Thêm dòng này
         }
     
     def process_directory(
@@ -375,6 +376,30 @@ class BatchProcessor:
                 return False
         except Exception as e:
             print(f"Conversion error: {e}")
+            return False
+
+    def _bypass_scribd_operation(
+        self,
+        input_file: str,
+        output_file: str,
+        params: Dict[str, Any]
+    ) -> bool:
+        """Bypass Scribd operation."""
+        try:
+            from components.scribd_bypass import ScribdBypass
+            file_type = params.get('file_type', 'document')
+            custom_title = params.get('custom_title', None)
+            output_dir = os.path.dirname(output_file) or 'scribd_output'
+            bypass = ScribdBypass(output_dir)
+            result = bypass.create_scribd_file(input_file, file_type, custom_title)
+            if result:
+                # Nếu output_file khác với result, đổi tên file cho đúng output_file
+                if os.path.abspath(result) != os.path.abspath(output_file):
+                    import shutil
+                    shutil.move(result, output_file)
+                return True
+            return False
+        except Exception as e:
             return False
 
 

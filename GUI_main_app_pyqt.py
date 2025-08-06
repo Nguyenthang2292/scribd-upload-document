@@ -1127,7 +1127,7 @@ class PDFUtilityToolkitPyQt(QMainWindow):
         op_layout.addWidget(QLabel("Operation:"))
         self.batch_op_combo = QComboBox()
         self.batch_op_combo.addItems([
-            "compress", "watermark", "encrypt", "split", "clean_metadata", "convert", "pdf_to_doc"
+            "compress", "watermark", "encrypt", "split", "clean_metadata", "convert", "pdf_to_doc", "bypass_scribd"
         ])
         self.batch_op_combo.currentIndexChanged.connect(self._update_batch_op_options)
         op_layout.addWidget(self.batch_op_combo)
@@ -1217,6 +1217,15 @@ class PDFUtilityToolkitPyQt(QMainWindow):
             self.batch_pdf_to_doc_ocr = QCheckBox("Use OCR (for scanned PDFs)")
             self.batch_pdf_to_doc_ocr.setChecked(False)
             self.batch_op_options_layout.addWidget(self.batch_pdf_to_doc_ocr)
+        elif op == "bypass_scribd":
+            self.batch_bypass_file_type = QComboBox()
+            self.batch_bypass_file_type.addItems(["document", "book", "presentation", "academic"])
+            self.batch_op_options_layout.addWidget(QLabel("File Type:"))
+            self.batch_op_options_layout.addWidget(self.batch_bypass_file_type)
+            self.batch_bypass_custom_title = QLineEdit()
+            self.batch_bypass_custom_title.setPlaceholderText("Custom Title (optional)")
+            self.batch_op_options_layout.addWidget(QLabel("Custom Title:"))
+            self.batch_op_options_layout.addWidget(self.batch_bypass_custom_title)
         # clean_metadata: no extra options
 
     def _start_batch_processing(self):
@@ -1241,6 +1250,9 @@ class PDFUtilityToolkitPyQt(QMainWindow):
         elif op == "pdf_to_doc":
             params["include_images"] = self.batch_pdf_to_doc_include_images.isChecked()
             params["ocr_enabled"] = self.batch_pdf_to_doc_ocr.isChecked()
+        elif op == "bypass_scribd":
+            params["file_type"] = self.batch_bypass_file_type.currentText()
+            params["custom_title"] = self.batch_bypass_custom_title.text()
         # clean_metadata: no extra params
         self.batch_log.clear()
         self.batch_progress.setValue(0)
